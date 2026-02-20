@@ -21,6 +21,23 @@ async function sendStartOrder() {
     createNewOrderGlobal(newOrder);
 }
 
+function addToCart(prod) {
+    
+    
+    if (existingItem) {
+        existingItem.qty++;
+    } else {
+        this.data.currentOrder.items.push({
+            id: prod.id,
+            name: prod.name,
+            price: prod.price,
+            qty: 1
+        });
+    }
+    this.updateOrderTotal();
+    this.renderCart();
+}
+
 async function renderProductPos(){
 
     const container = document.getElementById('pos-products-grid');
@@ -35,9 +52,30 @@ async function renderProductPos(){
                 <div class="product-name">${prod.name}</div>
                 <div class="product-price">${this.formatCurrency(prod.value)}</div>
             `;
-            item.onclick = () => this.addToCart(prod);
+            item.onclick = () => addToCart(prod);
             container.appendChild(item);
         });
+}
+
+async function renderStock2() {
+    const data = await getApi("/product/all-active");
+    const tbody = document.querySelector('#stock-table tbody');
+    if(!tbody) return;
+    tbody.innerHTML = '';
+    data.forEach(prod => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><img src="https://picsum.photos/seed/${prod.id}/40/40" style="border-radius:8px; object-fit:cover;"></td>
+            <td style="font-weight: 500;">${prod.name}</td>
+            <td><span style="background: #f1f5f9; padding: 4px 8px; border-radius: 4px; font-size: 0.85rem;">${prod.category}</span></td>
+            <td>${formatCurrency(prod.value)}</td>
+            <td style="${prod.stock < 10 ? 'color:var(--danger); font-weight:bold;' : 'font-weight:500;'}">${prod.stock}</td>
+            <td>
+                <button class="btn btn-outline" style="padding: 6px 12px; font-size: 0.8rem;" onclick="app.openProductModal(${prod.id})">Editar</button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
 }
 
 function renderCart(data) {
@@ -76,6 +114,8 @@ function renderCart(data) {
     
 }
 
+
+
 function renderNewOrderForm(){
 
     const view = document.getElementById('view-new-sale');
@@ -90,6 +130,27 @@ function renderNewOrderForm(){
 
 function renderHome(){
 
+    document.getElementById('new-order-number').value = '';
+    document.getElementById('new-order-customer').value = '';
+
+    // remove active de todas as telas
+    document.querySelectorAll('.view').forEach(el => 
+        el.classList.remove('active')
+    );
+
+    // remove active dos botões
+    document.querySelectorAll('.nav-btn').forEach(el => 
+        el.classList.remove('active')
+    );
+
+    // ativa home
+    document.getElementById('view-home')?.classList.add('active');
+
+    // ativa botão Início
+    document.querySelectorAll('.nav-btn')[0]?.classList.add('active');
+
+    // opcional: recarrega dados do dashboard
+    initHomeScream();
 }
 
 async function loadOrderToPos(data){
@@ -169,9 +230,34 @@ function buildListProduct(listProduct){
                 <div class="product-price">${this.formatCurrency(prod.value)}</div>
                 <div class="product-stock">Est: ${prod.stock}</div>
             `;
-            el.onclick = () => this.openProductModal(prod.id); // Corrigido para passar ID
+            el.onclick = () => this.openProductModal(prod.id);
             listOfProducts.appendChild(el);
         });
+}
+
+async function openProductModal(id = null) {
+    const modal = document.getElementById('modal-product');
+    const form = document.getElementById('form-product');
+    const deleteBtn = document.getElementById('btn-delete-prod');
+    
+    if (id) {
+        const prod = await getApi("/product/"+id);
+        document.getElementById('modal-product-title').textContent = "Editar Produto";
+        document.getElementById('prod-id').value = prod.id;
+        document.getElementById('prod-name').value = prod.name;
+        document.getElementById('prod-price').value = prod.value;
+        document.getElementById('prod-stock').value = prod.stock;
+        document.getElementById('prod-category').value = prod.category;
+        document.getElementById('prod-barcode').value = prod.barcode || '';
+        deleteBtn.style.display = 'block';
+    } else {
+        document.getElementById('modal-product-title').textContent = "Novo Produto";
+        form.reset();
+        document.getElementById('prod-id').value = '';
+        deleteBtn.style.display = 'none';
+    }
+    
+    modal.classList.add('active');
 }
 
 async function initHomeScream() {
@@ -220,6 +306,16 @@ function formatCurrency(amount){
     });
 
     return formatador.format(amount);
+}
+
+async function renderStock(){
+    document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+    const view = document.getElementById('view-stock');
+    if (view) {
+        view.classList.add('active');
+    }
+    await renderStock2();
 }
 
 document.addEventListener('DOMContentLoaded', initHomeScream);
