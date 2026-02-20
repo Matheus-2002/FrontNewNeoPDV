@@ -1,0 +1,7 @@
+Processo de Criar nova Order:
+
+1-Definir valores
+2-Pegar valores
+3-Chamar Api de criar Order
+4-Buscar Oder
+5-Renderizar order

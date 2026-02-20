@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDV Premium</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+    <nav class="sidebar">
+        <div class="logo">
+            <div class="logo-icon"><i class="ph ph-storefront"></i></div>
+            <div class="logo-text">PDV<span>Torrelli</span></div>
+        </div>
+
+        <button class="nav-btn active" onclick="renderHome()">
+            <i class="ph ph-squares-four"></i> Início
+        </button>
+        <button class="nav-btn" onclick="renderNewOrderForm()">
+            <i class="ph ph-plus-circle"></i> Nova Venda
+        </button>
+        <button class="nav-btn" onclick="app.navigate('stock')">
+            <i class="ph ph-package"></i> Estoque
+        </button>
+        <button class="nav-btn" onclick="app.navigate('orders')">
+            <i class="ph ph-receipt"></i> Vendas
+        </button>
+    </nav>
+
+    <main class="main-content">
+        
+        <section id="view-home" class="view active">
+            <h2>Dashboard</h2>
+            
+            <div class="grid-dashboard">
+                <div class="card stat-card">
+                    <div class="stat-icon"><i class="ph ph-currency-dollar"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-title">Vendas Hoje</span>
+                        <span class="stat-value" id="dash-total-sales">R$ 0,00</span>
+                    </div>
+                </div>
+                <div class="card stat-card">
+                    <div class="stat-icon" style="color: #6366f1; background: #e0e7ff;"><i class="ph ph-shopping-cart"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-title">Qtd. Vendas</span>
+                        <span class="stat-value" id="dash-count-sales">0</span>
+                    </div>
+                </div>
+                <div class="card stat-card">
+                    <div class="stat-icon" style="color: #f59e0b; background: #fef3c7;"><i class="ph ph-trophy"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-title">Top Produto</span>
+                        <span class="stat-value" id="dash-top-product" style="font-size: 1.2rem;">-</span>
+                    </div>
+                </div>
+                <div class="card stat-card">
+                    <div class="stat-icon" style="color: #10b981; background: #d1fae5;"><i class="ph ph-clock-countdown"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-title">Vendas Abertas</span>
+                        <span class="stat-value" id="dash-open-orders">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-title">
+                Vendas em Aberto
+                <button class="btn btn-sm btn-primary" id="nova-venda-home-page" style="padding: 8px 16px; font-size: 13px;">
+                    <i class="ph ph-plus"></i> Nova Venda
+                </button>
+            </div>
+            <div class="carousel-container" id="open-orders-carousel">
+                <div style="padding: 20px; color: var(--text-muted); font-style: italic;">Nenhuma venda aberta no momento.</div>
+            </div>
+
+            <div class="section-title">Lista de Produtos</div>
+            <div class="products-grid" id="home-products-list">
+                </div>
+        </section>
+
+        <section id="view-new-sale" class="view">
+            <div class="overlay active">
+                <div class="modal">
+                    <div class="logo-icon" style="margin: 0 auto 20px; width: 60px; height: 60px; font-size: 32px;"><i class="ph ph-shopping-bag"></i></div>
+                    <h3>Iniciar Nova Venda</h3>
+                    <p style="color: var(--text-muted); margin-top: 5px;">Digite o número da comanda ou pedido</p>
+                    <form onsubmit="sendStartOrder()">
+                        <input type="number" id="new-order-number" placeholder="Ex: 101" required autofocus>
+                        <input type="text" id="new-order-customer" placeholder="Ex: Matheus" required autofocus>
+                        <button type="submit" class="btn btn-primary" style="width: 100%; height: 50px; font-size: 16px;">Abrir PDV</button>
+                    </form>
+                    <button class="btn btn-outline" style="width: 100%; margin-top: 15px;" onclick="renderHome()">Cancelar</button>
+                </div>
+            </div>
+        </section>
+
+        <section id="view-pos" class="view">
+            <div class="pos-container">
+                <div class="pos-products">
+                    <div class="pos-header">
+                        <input type="text" id="pos-search" class="search-bar" placeholder="Buscar produto ou código de barras..." onkeyup="app.filterPosProducts(this.value)">
+                        <button class="btn btn-outline" onclick="app.saveAndExitPos()">
+                            <i class="ph ph-floppy-disk"></i> Salvar e Sair
+                        </button>
+                    </div>
+                    
+                    <div class="categories-filter" id="pos-categories">
+                        <div class="cat-chip active" onclick="app.filterCategory('all', this)">Todos</div>
+                        <div class="cat-chip" onclick="filterCategory('Bebidas')">Bebidas</div>
+                        <div class="cat-chip" onclick="app.filterCategory('Alimentos', this)">Alimentos</div>
+                        <div class="cat-chip" onclick="app.filterCategory('Limpeza', this)">Limpeza</div>
+                    </div>
+
+                    <div class="pos-items-area products-grid" id="pos-products-grid">
+                        </div>
+                </div>
+
+                <div class="pos-cart">
+                    <div style="padding: 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: white; border-radius: 16px 16px 0 0;">
+                        <h3 id="pos-order-title" style="margin: 0; font-size: 18px;">Pedido #0</h3>
+                        <button class="btn btn-outline" style="padding: 6px 12px; font-size: 13px;" onclick="app.navigate('home')">Sair</button>
+                    </div>
+                    
+                    <div class="cart-items" id="pos-cart-list">
+                        <div style="text-align: center; color: var(--text-muted); margin-top: 50px; display: flex; flex-direction: column; align-items: center; gap: 10px;">
+                            <i class="ph ph-shopping-cart" style="font-size: 40px; opacity: 0.3;"></i>
+                            Carrinho vazio
+                        </div>
+                    </div>
+
+                    <div class="cart-footer">
+                        <div class="cart-total">
+                            <span>Total</span>
+                            <span id="pos-cart-total">R$ 0,00</span>
+                        </div>
+                        <div class="cart-actions">
+                            <button class="btn btn-success" style="grid-column: span 2; height: 50px; font-size: 16px;" onclick="app.payAndClose()">
+                                <i class="ph ph-check-circle"></i> Pagar e Finalizar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="view-stock" class="view">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                <h2>Gestão de Estoque</h2>
+                <button class="btn btn-primary" onclick="app.openProductModal()">
+                    <i class="ph ph-plus"></i> Novo Produto
+                </button>
+            </div>
+            <div class="card table-container">
+                <table id="stock-table">
+                    <thead>
+                        <tr>
+                            <th>IMG</th>
+                            <th>Nome</th>
+                            <th>Categoria</th>
+                            <th>Preço</th>
+                            <th>Estoque</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section id="view-orders" class="view">
+            <h2>Histórico de Vendas</h2>
+            
+            <div class="filters-bar">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <label>De:</label>
+                    <input type="date" id="filter-date-start" onchange="app.renderOrderHistory()">
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <label>Até:</label>
+                    <input type="date" id="filter-date-end" onchange="app.renderOrderHistory()">
+                </div>
+                <button class="btn btn-outline" onclick="app.clearOrderFilters()">Limpar Filtro</button>
+            </div>
+
+            <div class="card table-container">
+                <table id="orders-table">
+                    <p>teste</p>
+                    <thead>
+                        <tr>
+                            <th>ID Pedido</th>
+                            <th>Data/Hora</th>
+                            <th>Status</th>
+                            <th>Total</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        </tbody>
+                </table>
+            </div>
+        </section>
+
+    </main>
+
+    <div id="modal-product" class="overlay">
+        <div class="modal" style="width: 500px; text-align: left;">
+            <h3 style="margin-bottom: 25px; font-size: 22px;" id="modal-product-title">Editar Produto</h3>
+            <form id="form-product" onsubmit="app.saveProduct(event)">
+                <input type="hidden" id="prod-id">
+                <div class="form-group">
+                    <label>Nome do Produto</label>
+                    <input type="text" id="prod-name" required>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div class="form-group">
+                        <label>Preço (R$)</label>
+                        <input type="number" step="0.01" id="prod-price" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Estoque</label>
+                        <input type="number" id="prod-stock" required>
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 15px;">
+                    <div class="form-group">
+                        <label>Categoria</label>
+                        <input type="text" id="prod-category" list="cat-list" required>
+                        <datalist id="cat-list">
+                            <option value="Bebidas">
+                            <option value="Alimentos">
+                            <option value="Limpeza">
+                            <option value="Outros">
+                        </datalist>
+                    </div>
+                    <div class="form-group">
+                        <label>Cód. Barras</label>
+                        <input type="text" id="prod-barcode">
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-danger" id="btn-delete-prod" onclick="app.deleteProduct()">Excluir</button>
+                    <div style="flex:1"></div>
+                    <button type="button" class="btn btn-outline" onclick="document.getElementById('modal-product').classList.remove('active')">Cancelar</button>
+                    <button type="submit" class="btn btn-success">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="toast" class="toast">
+        <i class="ph ph-check-circle"></i>
+        <span id="toast-msg">Mensagem aqui</span>
+    </div>
+
+    <script src="js/app.js" defer></script>
+</body>
+</html>
