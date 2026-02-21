@@ -23,6 +23,21 @@ async function sendStartOrder() {
     createNewOrderGlobal(newOrder);
 }
 
+function showToast(msg) {
+    const toast = document.getElementById('toast');
+    document.getElementById('toast-msg').textContent = msg;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 3000);
+}
+
+async function payAndClose() {
+    
+    await getApi("/order/close/"+orderIdPosGlobal)
+
+    showToast("Venda finalizada com sucesso!");
+    renderHome();
+}
+
 async function deleteProduct() {
     const id = document.getElementById('prod-id').value;
     if (confirm('Tem certeza que deseja excluir este produto?')) {
@@ -36,6 +51,7 @@ async function deleteProduct() {
 
 async function saveProduct(e) {
     e.preventDefault();
+
     const id = document.getElementById('prod-id').value;
     const name = document.getElementById('prod-name').value;
     const value = parseFloat(document.getElementById('prod-price').value);
@@ -45,17 +61,32 @@ async function saveProduct(e) {
 
     const productJson = {
         name: name,
+        category: category,
         value: value,
         stock: stock,
-        category: category,
         codebar: codeBar
     };
 
-    await putApi("/product/update/"+id, productJson);
+    // 🔥 AQUI ESTÁ A LÓGICA
+    if(id && id.trim() !== '') {
+        // UPDATE
+        console.log("Entrou no If");
+        await putApi("/product/update/" + id, productJson);
+        this.showToast?.("Produto atualizado.");
+    } else {
+        // CREATE
+        console.log("Entrou no else");
+        console.log(JSON.stringify(productJson, null, 2));
+        await postApi("/product/create", productJson);
+        this.showToast?.("Produto criado.");
+    }
 
     document.getElementById('modal-product').classList.remove('active');
-    this.renderStock();
-    if(document.getElementById('view-home').classList.contains('active')) this.renderDashboard();
+    await renderStock();
+
+    if(document.getElementById('view-home').classList.contains('active')) {
+        initHomeScream();
+    }
 }
 
 async function addToCart(prod) {
@@ -172,6 +203,8 @@ function renderCart(data) {
                 <i class="ph ph-shopping-cart" style="font-size: 40px; opacity: 0.3;"></i>
                 Carrinho vazio
             </div>`;
+
+            document.getElementById('pos-cart-total').textContent = formatCurrency(data.amount || 0);
         return;
     }
 
@@ -184,7 +217,7 @@ function renderCart(data) {
                 <div class="cart-item-price">${formatCurrency(item.productPrice)} un</div>
             </div>
             <div class="cart-item-qty">
-                <button class="qty-btn" onclick="addToCartForId('${item.productId}')">-</button>
+                <button class="qty-btn" onclick="subtractToCartForId('${item.productId}')">-</button>
                 <span style="font-weight: 600;">${item.quantity}</span>
                 <button class="qty-btn" onclick="addToCartForId('${item.productId}')">+</button>
             </div>
