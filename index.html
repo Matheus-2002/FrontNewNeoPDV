@@ -105,16 +105,16 @@
                 <div class="pos-products">
                     <div class="pos-header">
                         <input type="text" id="pos-search" class="search-bar" placeholder="Buscar produto ou código de barras..." onkeyup="app.filterPosProducts(this.value)">
-                        <button class="btn btn-outline" onclick="app.saveAndExitPos()">
+                        <!-- <button class="btn btn-outline" onclick="app.saveAndExitPos()">
                             <i class="ph ph-floppy-disk"></i> Salvar e Sair
-                        </button>
+                        </button> -->
                     </div>
                     
                     <div class="categories-filter" id="pos-categories">
-                        <div class="cat-chip active" onclick="app.filterCategory('all', this)">Todos</div>
-                        <div class="cat-chip" onclick="filterCategory('Bebidas')">Bebidas</div>
-                        <div class="cat-chip" onclick="app.filterCategory('Alimentos', this)">Alimentos</div>
-                        <div class="cat-chip" onclick="app.filterCategory('Limpeza', this)">Limpeza</div>
+                        <div class="cat-chip active" onclick="renderProductPosCategory('Todos', this)">Todos</div>
+                        <div class="cat-chip" onclick="renderProductPosCategory('Bebidas', this)">Bebidas</div>
+                        <div class="cat-chip" onclick="renderProductPosCategory('Alimentos', this)">Alimentos</div>
+                        <div class="cat-chip" onclick="renderProductPosCategory('Limpeza', this)">Limpeza</div>
                     </div>
 
                     <div class="pos-items-area products-grid" id="pos-products-grid">
@@ -124,7 +124,7 @@
                 <div class="pos-cart">
                     <div style="padding: 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: white; border-radius: 16px 16px 0 0;">
                         <h3 id="pos-order-title" style="margin: 0; font-size: 18px;">Pedido #0</h3>
-                        <button class="btn btn-outline" style="padding: 6px 12px; font-size: 13px;" onclick="app.navigate('home')">Sair</button>
+                        <button class="btn btn-outline" style="padding: 6px 12px; font-size: 13px;" onclick="renderHome()">Sair</button>
                     </div>
                     
                     <div class="cart-items" id="pos-cart-list">
@@ -212,7 +212,7 @@
     <div id="modal-product" class="overlay">
         <div class="modal" style="width: 500px; text-align: left;">
             <h3 style="margin-bottom: 25px; font-size: 22px;" id="modal-product-title">Editar Produto</h3>
-            <form id="form-product" onsubmit="app.saveProduct(event)">
+            <form id="form-product" onsubmit="saveProduct(event)">
                 <input type="hidden" id="prod-id">
                 <div class="form-group">
                     <label>Nome do Produto</label>
@@ -245,7 +245,7 @@
                     </div>
                 </div>
                 <div class="modal-actions">
-                    <button type="button" class="btn btn-danger" id="btn-delete-prod" onclick="app.deleteProduct()">Excluir</button>
+                    <button type="button" class="btn btn-danger" id="btn-delete-prod" onclick="deleteProduct()">Excluir</button>
                     <div style="flex:1"></div>
                     <button type="button" class="btn btn-outline" onclick="document.getElementById('modal-product').classList.remove('active')">Cancelar</button>
                     <button type="submit" class="btn btn-success">Salvar</button>

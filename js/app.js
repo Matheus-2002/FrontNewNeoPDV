@@ -1,3 +1,5 @@
+let orderIdPosGlobal;
+
 const dashTotalSales = document.getElementById('dash-total-sales');
 const dashCounSales = document.getElementById('dash-count-sales')
 const dashCountOpenOrder = document.getElementById('dash-open-orders')
@@ -21,21 +23,76 @@ async function sendStartOrder() {
     createNewOrderGlobal(newOrder);
 }
 
-function addToCart(prod) {
-    
-    
-    if (existingItem) {
-        existingItem.qty++;
-    } else {
-        this.data.currentOrder.items.push({
-            id: prod.id,
-            name: prod.name,
-            price: prod.price,
-            qty: 1
-        });
+async function deleteProduct() {
+    const id = document.getElementById('prod-id').value;
+    if (confirm('Tem certeza que deseja excluir este produto?')) {
+        const idProduct = document.getElementById('prod-id').value;
+        await deleteApi("/product/"+idProduct)
+        document.getElementById('modal-product').classList.remove('active');
+        renderHome();
+        this.showToast("Produto excluído.");
     }
-    this.updateOrderTotal();
-    this.renderCart();
+}
+
+async function saveProduct(e) {
+    e.preventDefault();
+    const id = document.getElementById('prod-id').value;
+    const name = document.getElementById('prod-name').value;
+    const value = parseFloat(document.getElementById('prod-price').value);
+    const stock = parseInt(document.getElementById('prod-stock').value);
+    const category = document.getElementById('prod-category').value;
+    const codeBar = document.getElementById('prod-barcode').value;
+
+    const productJson = {
+        name: name,
+        value: value,
+        stock: stock,
+        category: category,
+        codebar: codeBar
+    };
+
+    await putApi("/product/update/"+id, productJson);
+
+    document.getElementById('modal-product').classList.remove('active');
+    this.renderStock();
+    if(document.getElementById('view-home').classList.contains('active')) this.renderDashboard();
+}
+
+async function addToCart(prod) {
+    const body = {
+        productId:prod.id,
+        quantity:1
+    }
+    await postApi("/order/add-item/"+orderIdPosGlobal, body);
+    const orderNew = await getApi("/order/"+orderIdPosGlobal)
+    console.log("Order new: "+orderNew.amount);
+    console.log("Order Id: "+orderNew.id);
+    document.getElementById('pos-cart-total').textContent = formatCurrency(orderNew.amount);
+    renderCart(orderNew);
+}
+
+async function addToCartForId(prodId) {
+    const prod = await getApi("/product/"+prodId);
+    const body = {
+        productId:prod.id,
+        quantity:1
+    }
+    await postApi("/order/add-item/"+orderIdPosGlobal, body);
+    const orderNew = await getApi("/order/"+orderIdPosGlobal)
+    document.getElementById('pos-cart-total').textContent = formatCurrency(orderNew.amount);
+    renderCart(orderNew);
+}
+
+async function subtractToCartForId(prodId) {
+    const prod = await getApi("/product/"+prodId);
+    const body = {
+        productId:prod.id,
+        quantity:1
+    }
+    await postApi("/order/sub-item/"+orderIdPosGlobal, body);
+    const orderNew = await getApi("/order/"+orderIdPosGlobal)
+    document.getElementById('pos-cart-total').textContent = formatCurrency(orderNew.amount);
+    renderCart(orderNew);
 }
 
 async function renderProductPos(){
@@ -57,6 +114,32 @@ async function renderProductPos(){
         });
 }
 
+async function renderProductPosCategory(category, el){
+    document.querySelectorAll('.cat-chip').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+    let productsToRender;
+    const container = document.getElementById('pos-products-grid');
+    if(category === "Todos"){
+        productsToRender = await getApi("/product/all-active");
+    }else{
+
+        productsToRender = await getApi("/product/all-active/"+category);
+    }
+    
+    container.innerHTML = '';
+    productsToRender.forEach(prod => {
+        const item = document.createElement('div');
+        item.className = 'product-item';
+        item.innerHTML = `
+            <img src="https://picsum.photos/seed/${prod.id}/180/120" class="product-img">
+            <div class="product-name">${prod.name}</div>
+            <div class="product-price">${formatCurrency(prod.value)}</div>
+        `;
+        item.onclick = () => addToCart(prod);
+        container.appendChild(item);
+    });
+}
+
 async function renderStock2() {
     const data = await getApi("/product/all-active");
     const tbody = document.querySelector('#stock-table tbody');
@@ -71,7 +154,7 @@ async function renderStock2() {
             <td>${formatCurrency(prod.value)}</td>
             <td style="${prod.stock < 10 ? 'color:var(--danger); font-weight:bold;' : 'font-weight:500;'}">${prod.stock}</td>
             <td>
-                <button class="btn btn-outline" style="padding: 6px 12px; font-size: 0.8rem;" onclick="app.openProductModal(${prod.id})">Editar</button>
+                <button class="btn btn-outline" style="padding: 6px 12px; font-size: 0.8rem;" onclick="openProductModal('${prod.id}')">Editar</button>
             </td>
         `;
         tbody.appendChild(tr);
@@ -98,19 +181,21 @@ function renderCart(data) {
         el.innerHTML = `
             <div class="cart-item-info">
                 <div class="cart-item-title">${item.productName}</div>
-                <div class="cart-item-price">${this.formatCurrency(item.productPrice)} un</div>
+                <div class="cart-item-price">${formatCurrency(item.productPrice)} un</div>
             </div>
             <div class="cart-item-qty">
-                <button class="qty-btn" onclick="app.changeItemQty(${item.id}, -1)">-</button>
+                <button class="qty-btn" onclick="addToCartForId('${item.productId}')">-</button>
                 <span style="font-weight: 600;">${item.quantity}</span>
-                <button class="qty-btn" onclick="app.changeItemQty(${item.id}, 1)">+</button>
+                <button class="qty-btn" onclick="addToCartForId('${item.productId}')">+</button>
             </div>
             <div style="font-weight:700; margin-left: 15px; color: var(--primary);">${formatCurrency(item.amount)}</div>
         `;
         list.appendChild(el);
     });
 
-    document.getElementById('pos-cart-total').textContent = formatCurrency(data.amount);
+    document.getElementById('pos-cart-total').textContent = formatCurrency(data.amount || 0);
+
+    console.log("teste --> "+data.amount);
     
 }
 
@@ -215,6 +300,7 @@ async function createNewOrderGlobal(data) {
 }
 
 async function carregarOrderPos(orderId) {
+    orderIdPosGlobal = orderId;
     const orderCreate = await getApi("/order/"+orderId);
     loadOrderToPos(orderCreate);           
 }
@@ -236,6 +322,7 @@ function buildListProduct(listProduct){
 }
 
 async function openProductModal(id = null) {
+    console.log("Entrou modal");
     const modal = document.getElementById('modal-product');
     const form = document.getElementById('form-product');
     const deleteBtn = document.getElementById('btn-delete-prod');
@@ -275,12 +362,37 @@ async function initHomeScream() {
 }
 
 
-async function getApi(endpoint){    
+async function getApi(endpoint){  
+    console.log("URL --> "+API_URL+endpoint)  
     const response = await fetch((API_URL+endpoint), {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
       }
+    });
+
+    return await response.json();
+}
+
+async function deleteApi(endpoint) {    
+  const response = await fetch(API_URL + endpoint, {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+    }
+  });
+
+  return await response.json();
+}
+
+async function putApi(endpoint, data) {
+    const response = await fetch((API_URL + endpoint), {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        // O segredo está aqui: transformamos o objeto JS em texto JSON
+        body: JSON.stringify(data) 
     });
 
     return await response.json();
