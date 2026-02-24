@@ -28,7 +28,7 @@
         <button class="nav-btn" onclick="renderStock()">
             <i class="ph ph-package"></i> Estoque
         </button>
-        <button class="nav-btn" onclick="app.navigate('orders')">
+        <button class="nav-btn" onclick="renderOrderHistory()">
             <i class="ph ph-receipt"></i> Vendas
         </button>
     </nav>
@@ -186,7 +186,7 @@
                     <label>Até:</label>
                     <input type="date" id="filter-date-end" onchange="app.renderOrderHistory()">
                 </div>
-                <button class="btn btn-outline" onclick="app.clearOrderFilters()">Limpar Filtro</button>
+                <button class="btn btn-outline" onclick="clearOrderFilters()">Limpar Filtro</button>
             </div>
 
             <div class="card table-container">

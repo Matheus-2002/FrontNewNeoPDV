@@ -5,3 +5,16 @@ Processo de Criar nova Order:
 3-Chamar Api de criar Order
 4-Buscar Oder
 5-Renderizar order
+
+Endpoints:
+"/order/amount-today" OK
+"/order/sales-today" OK
+"/order/all-open/quantity" OK
+"/order/all-open" OK
+"/product/all-active"
+"/order/orders" OK
+"/order/close/" OK   
+"/order/add-item/"    
+"/order/sub-item/"    
+"/order/start"    
+"/order/"

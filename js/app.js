@@ -23,6 +23,96 @@ async function sendStartOrder() {
     createNewOrderGlobal(newOrder);
 }
 
+async function renderOrderHistory() {
+
+    document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+    document.getElementById('view-orders')?.classList.add('active');
+
+    const tbody = document.querySelector('#orders-table tbody');
+    if (!tbody) return;
+
+    tbody.innerHTML = `
+        <tr>
+            <td colspan="5" style="text-align:center;">Carregando pedidos...</td>
+        </tr>
+    `;
+
+    try {
+
+        let orders = await getApi("/order/orders");
+
+        if (!orders || !orders.length) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="5" style="text-align:center;">Nenhum pedido encontrado</td>
+                </tr>
+            `;
+            return;
+        }
+
+        const start = document.getElementById('filter-date-start')?.value;
+        const end = document.getElementById('filter-date-end')?.value;
+
+        if (start && end) {
+            orders = orders.filter(o => {
+                const date = o.createdAt?.split('T')[0];
+                return date >= start && date <= end;
+            });
+        }
+
+        orders.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+        tbody.innerHTML = '';
+
+        orders.forEach(order => {
+
+            const dateFmt = order.createdAt
+                ? new Date(order.createdAt).toLocaleString('pt-BR')
+                : '-';
+
+            const isOpen = order.status === 'OPEN';
+
+            const statusClass = isOpen ? 'status-open' : 'status-closed';
+            const statusLabel = isOpen ? 'Aberta' : 'Finalizada';
+
+            const value = Number(order.amount || 0);
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td style="font-weight:600;">#${order.ticket ?? '-'}</td>
+                <td>${dateFmt}</td>
+                <td><span class="status-badge ${statusClass}">${statusLabel}</span></td>
+                <td style="font-weight:600;">${formatCurrency(value)}</td>
+                <td>
+                    <button class="btn btn-outline"
+                        style="padding:6px 12px;font-size:0.8rem;"
+                        onclick="carregarOrderPos('${order.id}')">
+                        Abrir
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+    } catch (err) {
+        console.error(err);
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="5" style="text-align:center;color:red;">
+                    Erro ao carregar pedidos
+                </td>
+            </tr>
+        `;
+    }
+}
+
+function clearOrderFilters(){
+    document.getElementById('filter-date-start').value = '';
+    document.getElementById('filter-date-end').value = '';
+    renderOrderHistory();
+}
+
 function showToast(msg) {
     const toast = document.getElementById('toast');
     document.getElementById('toast-msg').textContent = msg;
